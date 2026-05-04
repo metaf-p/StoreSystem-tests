@@ -3,11 +3,12 @@ package tests.api.auth;
 import api.assertion.ApiErrorAssert;
 import api.client.ApiClients;
 import api.spec.ResponseSpec;
-import config.Config;
+import data.auth.AuthTestData;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import jupiter.annotation.ApiTest;
 import model.auth.request.LoginRequest;
+import model.auth.request.RegisterUserRequest;
 import model.auth.response.LoginResponse;
 import org.junit.jupiter.api.Test;
 
@@ -23,9 +24,12 @@ public class LoginTest {
     @Test
     void shouldLoginUserWithValidCredentials() {
 
+        RegisterUserRequest user = AuthTestData.uniqueUser();
+        api.auth().register(user);
+
         LoginRequest request = new LoginRequest(
-                Config.getInstance().adminLogin(),
-                Config.getInstance().adminPassword()
+                user.email(),
+                user.password()
         );
 
         ExtractableResponse<Response> extract = api.auth().loginRaw(request).then()
@@ -42,8 +46,10 @@ public class LoginTest {
 
     @Test
     void shouldNotLoginWithInvalidPassword() {
+        RegisterUserRequest user = AuthTestData.uniqueUser();
+        api.auth().register(user);
         LoginRequest request = new LoginRequest(
-                Config.getInstance().adminLogin(),
+                user.email(),
                 "wrongpass"
         );
 

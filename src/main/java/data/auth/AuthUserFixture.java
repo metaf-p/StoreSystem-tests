@@ -21,9 +21,9 @@ public final class AuthUserFixture {
         this.userClient = userClient;
     }
 
-    public AuthContext createUser(UserCleanup userCleanup) {
+    public AuthContext createUser() {
         RegisterUserRequest request = AuthTestData.uniqueUser();
-        registerUser(request, userCleanup);
+        registerUser(request);
 
         LoginRequest loginRequest = new LoginRequest(
                 request.email(),
@@ -33,22 +33,16 @@ public final class AuthUserFixture {
         return authClient.authenticate(loginRequest);
     }
 
-    public RegisterUserResponse registerUser(
-            RegisterUserRequest request,
-            UserCleanup cleanup
-    ) {
-        RegisterUserResponse response = authClient.register(request);
-        cleanup.addUser(response.user().userId());
-
-        return response;
+    public RegisterUserResponse registerUser(RegisterUserRequest request) {
+        return authClient.register(request);
     }
 
-    public List<RegisterUserResponse> registerUsers(int count, UserCleanup cleanup) {
+    public List<RegisterUserResponse> registerUsers(int count) {
         List<RegisterUserResponse> users = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             RegisterUserRequest request = AuthTestData.uniqueUser();
-            RegisterUserResponse response = registerUser(request, cleanup);
+            RegisterUserResponse response = registerUser(request);
             users.add(response);
         }
 
@@ -57,11 +51,10 @@ public final class AuthUserFixture {
 
     public AuthContext createUserWithRole(
             UserRole role,
-            AuthContext admin,
-            UserCleanup cleanup
+            AuthContext admin
     ) {
         RegisterUserRequest registerUser = AuthTestData.uniqueUser();
-        RegisterUserResponse registerUserResponse = registerUser(registerUser, cleanup);
+        RegisterUserResponse registerUserResponse = registerUser(registerUser);
 
         if (role != UserRole.CUSTOMER) {
             userClient.promote(admin, registerUserResponse.user().userId(), new PromoteRequest(role));

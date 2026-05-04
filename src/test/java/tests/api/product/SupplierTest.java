@@ -2,7 +2,6 @@ package tests.api.product;
 
 import api.client.ApiClients;
 import data.auth.AuthUserFixture;
-import data.auth.UserCleanup;
 import data.product.ProductTestData;
 import jupiter.annotation.Admin;
 import jupiter.annotation.ApiTest;
@@ -19,11 +18,10 @@ public class SupplierTest {
     @Test
     void shouldCreateSupplierWithOperatorRole(
             @Admin AuthContext admin,
-            AuthUserFixture authUserFixture,
-            UserCleanup cleanup
+            AuthUserFixture authUserFixture
     ) {
         SupplierCreateRequest request = ProductTestData.uniqueSupplier();
-        AuthContext operator = authUserFixture.createUserWithRole(UserRole.OPERATOR, admin, cleanup);
+        AuthContext operator = authUserFixture.createUserWithRole(UserRole.OPERATOR, admin);
         SupplierResponse supplierResponse = api.suppliers().create(operator, request);
     }
 }

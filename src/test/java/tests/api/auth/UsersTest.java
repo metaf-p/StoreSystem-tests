@@ -62,7 +62,7 @@ public class UsersTest {
         int page = 2;
         int pageSize = 7;
 
-        authUserFixture.registerUsers(usersCount, userCleanup);
+        authUserFixture.registerUsers(usersCount);
 
         UserResponse userResponse = api.users().listUsers(admin, page, pageSize);
         assertThat(userResponse.page()).isEqualTo(page);

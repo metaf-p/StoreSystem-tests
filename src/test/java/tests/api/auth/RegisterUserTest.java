@@ -5,7 +5,6 @@ import api.client.ApiClients;
 import api.spec.ResponseSpec;
 import data.auth.AuthTestData;
 import data.auth.AuthUserFixture;
-import data.auth.UserCleanup;
 import io.restassured.response.Response;
 import jupiter.annotation.ApiTest;
 import model.auth.common.UserRole;
@@ -24,11 +23,10 @@ public class RegisterUserTest {
 
     @Test
     void shouldRegisterUserWithValidInput(
-            AuthUserFixture authUserFixture,
-            UserCleanup userCleanup
+            AuthUserFixture authUserFixture
     ) {
         RegisterUserRequest request = AuthTestData.uniqueUser();
-        RegisterUserResponse response = authUserFixture.registerUser(request, userCleanup);
+        RegisterUserResponse response = authUserFixture.registerUser(request);
 
         assertThat(response.message()).isEqualTo(SUCCESSFUL_REGISTRATION_MESSAGE);
         assertThat(response.user().email()).isEqualTo(request.email());
@@ -36,12 +34,9 @@ public class RegisterUserTest {
     }
 
     @Test
-    void shouldNotRegisterUserWithExistingEmail(
-            AuthUserFixture authUserFixture,
-            UserCleanup userCleanup
-    ) {
+    void shouldNotRegisterUserWithExistingEmail() {
         RegisterUserRequest request = AuthTestData.uniqueUser();
-        authUserFixture.registerUser(request, userCleanup);
+        api.auth().register(request);
 
         RegisterUserRequest requestWithDuplicateEmail = AuthTestData.newUserWithEmail(request.email());
 

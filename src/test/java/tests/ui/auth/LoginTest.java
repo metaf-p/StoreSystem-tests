@@ -2,7 +2,6 @@ package tests.ui.auth;
 
 import data.auth.AuthTestData;
 import data.auth.AuthUserFixture;
-import data.auth.UserCleanup;
 import jupiter.annotation.UiTest;
 import model.auth.request.RegisterUserRequest;
 import org.junit.jupiter.api.Test;
@@ -24,12 +23,11 @@ public class LoginTest {
 
     @Test
     void shouldLoginWithValidUserData(
-            AuthUserFixture authUserFixture,
-            UserCleanup userCleanup
+            AuthUserFixture authUserFixture
     ) {
 
         RegisterUserRequest registerUserRequest = AuthTestData.uniqueUser();
-        authUserFixture.registerUser(registerUserRequest, userCleanup);
+        authUserFixture.registerUser(registerUserRequest);
 
         new LoginPage()
                 .open()
@@ -51,12 +49,11 @@ public class LoginTest {
 
     @Test
     void shouldLogoutAndOpenLogin(
-            AuthUserFixture authUserFixture,
-            UserCleanup userCleanup
+            AuthUserFixture authUserFixture
     ) {
 
         RegisterUserRequest registerUserRequest = AuthTestData.uniqueUser();
-        authUserFixture.registerUser(registerUserRequest, userCleanup);
+        authUserFixture.registerUser(registerUserRequest);
 
         LoginPage loginPage = new LoginPage()
                 .open()
