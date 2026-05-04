@@ -1,0 +1,11 @@
+.idea
+*.iml
+
+Makefile
+
+target
+build
+.DS_Store
+
+.agents
+skills-lock.json
