@@ -11,6 +11,8 @@ import model.product.request.SupplierCreateRequest;
 import model.product.response.SupplierResponse;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class SupplierClient extends BaseApiClient {
     public SupplierClient(ApiRequester apiRequester) {
@@ -22,6 +24,27 @@ public class SupplierClient extends BaseApiClient {
                 ApiRequest.withoutBody(ProductServiceEndpoints.SUPPLIERS_LIST),
                 ProductServiceRequestSpec.authenticatedRequest(actor),
                 ResponseSpec.ok200()
+        );
+    }
+
+    public SupplierResponse get(AuthContext actor, UUID supplierId) {
+        return execute(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIER_BY_ID,
+                        Map.of("supplier_id", supplierId)
+                ),
+                ProductServiceRequestSpec.authenticatedRequest(actor),
+                ResponseSpec.ok200()
+        );
+    }
+
+    public Response getWithoutAuthRaw(UUID supplierId) {
+        return executeRaw(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIER_BY_ID,
+                        Map.of("supplier_id", supplierId)
+                ),
+                ProductServiceRequestSpec.unauthenticatedRequest()
         );
     }
 
@@ -37,6 +60,13 @@ public class SupplierClient extends BaseApiClient {
         return executeRaw(
                 ApiRequest.withBody(ProductServiceEndpoints.SUPPLIERS_CREATE, request),
                 ProductServiceRequestSpec.authenticatedRequest(actor)
+        );
+    }
+
+    public Response createWithoutAuthRaw(SupplierCreateRequest request) {
+        return executeRaw(
+                ApiRequest.withBody(ProductServiceEndpoints.SUPPLIERS_CREATE, request),
+                ProductServiceRequestSpec.unauthenticatedRequest()
         );
     }
 }

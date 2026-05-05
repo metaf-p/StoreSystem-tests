@@ -1,6 +1,7 @@
 package jupiter.extension;
 
 import data.auth.AuthUserFixture;
+import data.product.SupplierFixture;
 import jupiter.annotation.Admin;
 import model.auth.common.AuthContext;
 import org.junit.jupiter.api.extension.*;
@@ -15,7 +16,8 @@ public class ApiFixtureExtension implements ParameterResolver {
 
         Class<?> parameterType = parameterContext.getParameter().getType();
         return parameterContext.isAnnotated(Admin.class)
-                || parameterType.equals(AuthUserFixture.class);
+                || parameterType.equals(AuthUserFixture.class)
+                || parameterType.equals(SupplierFixture.class);
     }
 
     @Override
@@ -33,6 +35,10 @@ public class ApiFixtureExtension implements ParameterResolver {
 
         if (parameterType.equals(AuthUserFixture.class)) {
             return ApiTestRuntime.get(extensionContext).authUserFixture();
+        }
+
+        if(parameterType.equals(SupplierFixture.class)) {
+            return ApiTestRuntime.get(extensionContext).supplierFixture();
         }
 
         throw new ExtensionConfigurationException(

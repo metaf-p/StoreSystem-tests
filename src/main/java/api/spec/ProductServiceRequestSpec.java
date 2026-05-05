@@ -18,6 +18,11 @@ public final class ProductServiceRequestSpec {
                 .addFilters(ApiLoggingFilter.filters());
     }
 
+    public static RequestSpecification unauthenticatedRequest() {
+        return defaultRequestSpec()
+                .build();
+    }
+
     public static RequestSpecification authenticatedRequest(AuthContext context) {
         return defaultRequestSpec()
                 .addHeader("Authorization", context.tokenType() + " " + context.token())

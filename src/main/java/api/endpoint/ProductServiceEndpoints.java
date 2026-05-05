@@ -16,6 +16,13 @@ public final class ProductServiceEndpoints {
                     new TypeRef<List<SupplierResponse>>() {
                     }
             );
+    public static final Endpoint<SupplierResponse> SUPPLIER_BY_ID =
+            new Endpoint<>(
+                    "/suppliers/{supplier_id}",
+                    HttpMethods.GET,
+                    new TypeRef<SupplierResponse>() {
+                    }
+            );
     public static final Endpoint<SupplierResponse> SUPPLIERS_CREATE =
             new Endpoint<>(
                     "/suppliers/",
