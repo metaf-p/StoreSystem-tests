@@ -7,7 +7,7 @@ Do not treat it as a roadmap replacement.
 
 ## Last updated
 
-2026-04-28
+2026-05-05
 
 ## Implemented
 
@@ -20,7 +20,8 @@ Do not treat it as a roadmap replacement.
   - typed endpoint definitions through `Endpoint`, `AuthEndpoints`, and `ProductServiceEndpoints`.
   - technical transport through `ApiRequest` and `ApiRequester`.
   - query parameter support in `ApiRequest` and `ApiRequester`.
-  - config-driven API logging through `ApiLogMode` and `ApiLoggingFilter`, attached from `AuthServiceRequestSpecs`.
+  - config-driven API logging through `ApiLogMode` and `ApiLoggingFilter`, attached from request specs.
+  - API log scoping through `ApiCallScope` and `ApiLogContext`.
 - Auth and authenticated runtime:
   - `AuthClient` for login/register flows.
   - `AuthContext` for access token, refresh token, token type, and user id.
@@ -32,17 +33,22 @@ Do not treat it as a roadmap replacement.
 - Product-service API path started:
   - `SupplierClient` for supplier list and supplier create operations.
   - supplier request/response DTOs in `model.product.request` and `model.product.response`.
-- Minimal data generation and cleanup:
+- Minimal data generation and user lifecycle:
   - `AuthTestData` for auth-domain test data.
   - `AuthUserFixture` for creating users through API.
   - `AuthUserFixture.registerUsers(...)` for small batch setup through repeated API registration.
-  - `UserCleanup` plus extension-managed cleanup after each test.
+  - `@TestUser` for method-level declarative user creation with a `role()` attribute.
+  - `@CurrentUser` for resolving the user created by `@TestUser`.
+  - test-created users are intentionally not deleted after every test by the framework.
+  - user database cleanup is handled periodically by an application-level cleanup script outside this test framework.
 - Extension-first test foundation:
   - `@ApiTest` entry point.
   - `@UiTest` entry point.
   - `@Admin` parameter marker.
-  - `ApiClientExtension` for API client resolution, auth contexts, fixtures, admin bootstrap, and cleanup.
-  - `ApiClientExtension` now resolves any `BaseApiClient` with a public `ApiRequester` constructor instead of listing every concrete client.
+  - `ApiTestRuntime` as the shared API runtime for extensions.
+  - `ApiFixtureExtension` for `@Admin` and `AuthUserFixture` parameter resolution.
+  - `UserExtension` for `@TestUser` setup and `@CurrentUser` parameter resolution.
+  - `ApiClients` as an explicit lightweight client aggregator used by tests and runtime setup.
   - `UiExtension` for Selenide base URL setup and browser cleanup.
 - Minimal UI adapter:
   - `BasePage`, `LoginPage`, `RegistrationPage`, `ProductPage`.
@@ -68,9 +74,11 @@ Do not treat it as a roadmap replacement.
   - Docker Compose cleanup and docker-data permission cleanup.
 - Test coverage currently present:
   - API auth tests for login, registration, `/me`, users list pagination, promotion, edit, and delete flows.
+  - API user tests are being migrated to declarative user setup through `@TestUser` and `@CurrentUser`; current API user flows no longer rely on plain unresolved `AuthContext` parameters.
   - pagination coverage uses non-default `page` and `page_size` query parameters.
   - current-user assertions in promotion/edit/delete flows use `/me` instead of searching the paginated users list.
-  - product-service supplier test class exists as a scaffold, but it does not yet exercise a real supplier flow.
+  - product-service supplier tests now exercise create, list, role-access, duplicate-name, and validation-error paths.
+  - supplier positive checks are still shallow: they mostly verify `supplierId` or non-empty lists, not the full created supplier contract.
   - UI auth tests for login page, login/logout flow, registration page visibility, and API-authenticated UI entry.
 
 ## Partially implemented
@@ -80,8 +88,11 @@ Do not treat it as a roadmap replacement.
   - environment-aware selection is deferred until a second real environment or CI/runtime divergence appears.
   - product service URL is configured directly in `LocalConfig`, not through environment-aware selection.
 - API logging is intentionally small:
-  - only `OFF` and `ALL` modes exist.
-  - mode selection currently comes from the `api.log` system property, with `ALL` as the local default.
+  - `OFF`, `ALL`, and `TEST_ONLY` modes exist.
+  - mode selection currently comes from the `api.log` system property, with `TEST_ONLY` as the local default.
+  - `TEST_ONLY` logs calls in the default test scope and suppresses calls wrapped as setup or cleanup.
+  - `AuthUserFixture` and admin bootstrap use `ApiLogContext.asSetup(...)` so user preparation noise can be hidden from default logs.
+  - `CLEANUP` scope exists in `ApiLogContext`, but there is no active framework-owned cleanup flow yet.
 - Query parameter support is intentionally minimal:
   - only the currently needed `ApiRequest.withQueryParams(...)` factory exists.
   - no generic pagination abstraction such as `PaginationQuery` exists yet.
@@ -93,13 +104,17 @@ Do not treat it as a roadmap replacement.
   - page objects cover only proven auth/product navigation flows.
   - no component abstraction, screenshot comparison, or advanced UI infrastructure exists.
   - stronger page identity checks beyond the common page title locator are intentionally deferred.
+  - UI tests have not yet been refactored to the new `@TestUser` / `@CurrentUser` user fixture style.
+  - `@UiTest` currently wires `UiExtension` and `ApiFixtureExtension`, but not `UserExtension`.
 - Test foundation is extension-first but still small:
-  - one API extension currently owns automatic client creation, fixture access, admin auth, and cleanup.
-  - this is acceptable for the current size, but may need splitting only when responsibilities grow from real pressure.
-  - `ApiRequester` is still injectable as a test parameter even though it is now mostly a transport detail behind API clients.
+  - API runtime responsibilities are split between `ApiTestRuntime`, `ApiFixtureExtension`, and `UserExtension`.
+  - tests still create `ApiClients` explicitly instead of receiving domain clients through parameter resolution.
+  - user cleanup is not a per-test framework responsibility at the current stage.
+  - `UserCleanup` exists in code but is not part of the active extension flow.
 - Product-service support is intentionally incomplete:
   - `SupplierClient` currently covers only list and create.
-  - supplier get-by-id, delete, cleanup, test data helper, and real supplier tests are not implemented yet.
+  - supplier tests exist, but the current task is still to strengthen the real supplier flow and prove the created resource contract.
+  - supplier get-by-id, delete, cleanup, and product-service fixture support are not implemented yet.
   - product, warehouse, product-in-warehouse, supplier document, and multipart flows are not implemented yet.
 - CI/CD baseline currently runs API tests only:
   - UI tests are not included in the first CI e2e run.
@@ -111,7 +126,7 @@ Do not treat it as a roadmap replacement.
 - Parallel execution support and isolation review.
 - Rich reporting or hosted report integration.
 - Multiple runtime config implementations and config factory/selection.
-- Completed product-service domain coverage beyond the initial supplier scaffold.
+- Completed product-service domain coverage beyond the current supplier create/list baseline.
 - Supplier cleanup and product-service fixture support.
 - Generic pagination model or shared pagination assertions.
 - Multipart/form-data transport support for upload/document endpoints.
@@ -127,25 +142,28 @@ Do not treat it as a roadmap replacement.
   - Stage 7 is represented by a minimal Selenide page layer and explicit `UiAuthBridge`.
   - Stage 8 is represented by a GitHub Actions workflow that checks out the app repository, starts the app through Docker Compose, waits for auth service readiness, runs API-tagged tests, and preserves diagnostics.
   - the pagination and `/me` work is a narrow Stage 10-style API expansion inside auth/user.
-  - product-service work has started with supplier endpoints, config, request spec, DTOs, and client scaffold, but it is not yet a proven real flow.
+  - product-service work has started with supplier endpoints, config, request spec, DTOs, test data, and create/list tests, but the created supplier contract is not fully proven yet.
+  - UI test refactoring to the declarative user fixture model is intentionally deferred while API/product-service work is active.
   - DB support, parallel execution, reporting, and broader product-service flows remain deferred.
 
 ## Architectural observations
 
-- The framework is still aligned with the API-first direction: API clients, auth context, fixtures, and cleanup are the center of the design.
-- The project is also aligned with the extension-first direction: tests receive clients, auth contexts, fixtures, and cleanup through JUnit parameter resolution rather than base classes.
+- The framework is still aligned with the API-first direction: API clients, auth context, and fixtures are the center of the design.
+- The project is also aligned with the extension-first direction: tests receive shared fixture/runtime state through JUnit parameter resolution rather than base classes.
+- Per-test user deletion is intentionally excluded from the framework for now; periodic database cleanup belongs to the application side and is not modeled as a framework feature.
 - Current abstractions appear mostly extracted from proven flows rather than invented upfront.
 - `ApiRequester` remains technical and stateless, which keeps domain behavior inside clients.
+- `ApiLogContext` is a narrow runtime helper for API logging scope, not a domain fixture or auth state holder.
 - Query parameter support remains transport-level; pagination behavior is expressed in `UserClient`, not in the requester.
-- `ApiClientExtension` no longer needs manual registration for every API client; concrete clients are created through the common `BaseApiClient` constructor contract.
-- This automatic client creation keeps the extension from growing with every new service client, but it should stay limited to API clients, not fixtures.
+- `ApiClients` keeps client construction explicit and small while more API areas are still being proven.
 - `AuthServiceRequestSpecs` still contains only request defaults and authentication header composition; auth state is not hidden in specs.
 - `ProductServiceRequestSpec` repeats the auth-service spec shape for a second base URL; this duplication is acceptable while only two services exist.
 - `/me` is now the preferred way to assert current-user state, which avoids relying on the first page of the paginated users list.
-- `AuthUserFixture.registerUsers(...)` keeps batch setup API-based by repeating the proven single-user registration flow and preserving cleanup.
+- `AuthUserFixture.registerUsers(...)` keeps batch setup API-based by repeating the proven single-user registration flow.
 - The model package split makes request, response, and shared auth/user models more explicit without adding a framework-wide model abstraction.
 - Product-service models currently use a separate `model.product` namespace; this matches the second API domain without introducing a global model framework.
 - `UiAuthBridge` keeps authenticated UI bootstrap outside page objects, which preserves the page layer as a thin adapter.
+- UI tests are currently behind the API test foundation refactor: API user flows use `@TestUser` / `@CurrentUser`, but UI auth bridge coverage still needs a separate refactor step.
 - CI now proves the API-centered path against a real Docker Compose application runtime.
 - The current design should still avoid adding DB support, parallel execution, rich reporting, generic pagination abstractions, or larger UI abstractions before repeated flows create real pressure.
 
@@ -155,22 +173,25 @@ Do not treat it as a roadmap replacement.
 - `LoginPage.submit(T expectedPage)` was removed from the page object API. Login flow now uses explicit scenario methods.
 - Page object identity checks still rely mainly on the common page title locator, currently `h1`. Strengthening them is recorded in `architecture/deferred-tasks.md`.
 - Pagination tests avoid exact `total` and exact page contents because the users list is global and may contain data from other tests or seed users.
-- `SupplierTest.shouldCreateSupplierWithValidData` is currently a no-op scaffold and should not be counted as real coverage.
-- `ApiRequester` remains exposed through `ApiClientExtension`; consider removing it from parameter resolution if tests should only use domain clients.
+- Test-created users are not deleted after each test by design. Database hygiene is expected to come from a periodic cleanup script in the application repository, not from this framework.
+- Supplier positive tests currently prove that create/list endpoints respond successfully, but they still need stronger field-level contract checks for the created supplier.
+- UI auth bridge test refactoring is deferred; current UI test setup should not be treated as fully aligned with the new declarative user fixture model.
 - `ProductServiceRequestSpec` uses singular naming while the existing auth spec uses plural `AuthServiceRequestSpecs`; naming can be aligned during cleanup.
 - The latest GitHub Actions API test run was reported green by the user after adding Docker Compose startup, readiness waiting, API tag filtering, diagnostics artifacts, and cleanup.
 
 ## Next steps
 
 1. Keep the API CI baseline stable and inspect artifacts from failed runs when needed.
-2. Turn the supplier scaffold into one real API flow: create supplier, fetch or otherwise verify it, assert fields, and clean it up.
+2. Strengthen the current supplier flow: create supplier, fetch or otherwise verify the exact created supplier, assert fields, and clean it up.
 3. Add supplier delete/get-by-id support before product creation tests start depending on suppliers.
-4. Decide whether `ApiRequester` should remain injectable or become internal-only behind `BaseApiClient`.
-5. Decide API logging default policy for local and CI runs.
-6. Keep pagination abstraction deferred until another domain client or repeated pagination assertions appear.
-7. Keep API error assertion improvements deferred until a second real validation response shape appears.
-8. Keep DB support, parallel execution, and richer reporting deferred until the API CI baseline is stable across repeated runs.
+4. Keep per-test user cleanup out of the framework unless the external cleanup script stops being sufficient for test reliability.
+5. Refactor UI tests to the current declarative user fixture style before enabling UI tests in CI.
+6. Decide API logging default policy for local and CI runs.
+7. Keep pagination abstraction deferred until another domain client or repeated pagination assertions appear.
+8. Keep API error assertion improvements deferred until a second real validation response shape appears.
+9. Keep DB support, parallel execution, and richer reporting deferred until the API CI baseline is stable across repeated runs.
 
 ## Deferred during review
 
 - `Strengthen page object identity checks` is recorded in `architecture/deferred-tasks.md`.
+- UI test refactoring to `@TestUser` / `@CurrentUser` is recorded in `architecture/deferred-tasks.md`.

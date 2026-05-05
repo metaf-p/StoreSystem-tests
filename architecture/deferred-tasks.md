@@ -39,10 +39,18 @@ When reviewing this backlog:
 - Reason: current page objects are still minimal, and the existing title checks are enough for the current UI baseline while other cleanup/refinement work is in progress.
 - Return when: adding or expanding UI flows, touching page objects again, or when page identity checks become flaky or ambiguous.
 
-### Introduce declarative test user fixture annotation
+### Revisit framework-owned user cleanup
 
 - Status: deferred
 - Area: Test foundation / user fixtures
-- Task: finish a method-level `@TestUser` annotation with a `role()` attribute, handled by a dedicated `UserExtension` that creates the user before the test, resolves `AuthContext`, and performs cleanup automatically.
-- Reason: `ApiClients` is already separated from `ApiClientExtension`, but user creation is still implicit through method parameters and cleanup is still passed around manually.
-- Return when: replacing repeated `AuthContext user` setup in API tests or when the first role-based user flow needs a declarative entry point.
+- Task: decide whether the test framework should own targeted cleanup for users created through `@TestUser` and `AuthUserFixture`.
+- Reason: current user cleanup is intentionally handled outside the test framework by a periodic application-level database cleanup script.
+- Return when: accumulated test users start making tests flaky, CI/runtime data volume becomes a problem, or parallel execution requires stricter per-test isolation.
+
+### Refactor UI tests to declarative user fixtures
+
+- Status: deferred
+- Area: UI tests / test foundation
+- Task: align UI tests with the current `@TestUser` / `@CurrentUser` model, including API-authenticated UI entry through `UiAuthBridge`.
+- Reason: API user tests were refactored first, while UI tests are intentionally left on the old setup shape during the current supplier-flow work.
+- Return when: touching UI auth tests, expanding UI coverage, or preparing UI tests for CI execution.

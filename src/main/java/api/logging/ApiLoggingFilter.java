@@ -9,11 +9,18 @@ import io.restassured.filter.log.ResponseLoggingFilter;
 import java.util.List;
 
 public final class ApiLoggingFilter {
+
     private ApiLoggingFilter() {
     }
 
     public static List<Filter> filters() {
-        if (Config.getInstance().apiLogMode() == ApiLogMode.OFF) {
+        ApiLogMode apiLogMode = Config.getInstance().apiLogMode();
+        if (apiLogMode == ApiLogMode.OFF) {
+            return List.of();
+        }
+
+        if(apiLogMode == ApiLogMode.TEST_ONLY
+        && ApiLogContext.currentScope() != ApiCallScope.TEST) {
             return List.of();
         }
 

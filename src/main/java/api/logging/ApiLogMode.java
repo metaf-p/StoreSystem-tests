@@ -2,5 +2,6 @@ package api.logging;
 
 public enum ApiLogMode {
     OFF,
-    ALL
+    ALL,
+    TEST_ONLY
 }
