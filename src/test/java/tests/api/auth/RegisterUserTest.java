@@ -4,8 +4,6 @@ import api.assertion.ApiErrorAssert;
 import api.client.ApiClients;
 import api.spec.ResponseSpec;
 import data.auth.AuthTestData;
-import data.auth.AuthUserFixture;
-import io.restassured.response.Response;
 import jupiter.annotation.meta.ApiTest;
 import model.auth.common.UserRole;
 import model.auth.request.RegisterUserRequest;
@@ -22,11 +20,9 @@ public class RegisterUserTest {
     private static final String EMAIL_ALREADY_REGISTERED_MESSAGE = "Email already registered";
 
     @Test
-    void shouldRegisterUserWithValidInput(
-            AuthUserFixture authUserFixture
-    ) {
+    void shouldRegisterUserWithValidInput() {
         RegisterUserRequest request = AuthTestData.uniqueUser();
-        RegisterUserResponse response = authUserFixture.registerUser(request);
+        RegisterUserResponse response = api.auth().register(request);
 
         assertThat(response.message()).isEqualTo(SUCCESSFUL_REGISTRATION_MESSAGE);
         assertThat(response.user().email()).isEqualTo(request.email());
@@ -40,9 +36,9 @@ public class RegisterUserTest {
 
         RegisterUserRequest requestWithDuplicateEmail = AuthTestData.newUserWithEmail(request.email());
 
-        Response response = api.auth().registerRaw(requestWithDuplicateEmail);
-
-        ApiErrorAssert.assertThat(response, ResponseSpec.unprocessableEntity422())
+        ApiErrorAssert.assertThat(
+                        api.auth().registerRaw(requestWithDuplicateEmail),
+                        ResponseSpec.unprocessableEntity422())
                 .hasDetail(EMAIL_ALREADY_REGISTERED_MESSAGE);
     }
 }

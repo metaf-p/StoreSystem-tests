@@ -36,24 +36,21 @@ public class UserDeleteTest {
 
         assertThat(deleteUserResponse.detail()).isEqualTo(USER_DELETED_SUCCESSFULLY_MESSAGE);
 
-        Response response = api.users().profileRaw(user);
-        ApiErrorAssert.assertThat(response, ResponseSpec.notFound404())
+        ApiErrorAssert.assertThat(
+                        api.users().profileRaw(user),
+                        ResponseSpec.notFound404())
                 .hasDetail(USER_NOT_FOUND_MESSAGE);
     }
 
     @TestUser(role = UserRole.ADMIN)
     @Test
-    void rejectSelfDeleteForAdmin(
-            @CurrentUser AuthContext user
-    ) {
+    void rejectSelfDeleteForAdmin(@CurrentUser AuthContext user) {
         ApiErrorAssert.assertThat(api.users().deleteRaw(user, user.userId()), ResponseSpec.forbidden403())
                 .hasDetail(SUPERADMIN_CANNOT_DELETE_OWN_ACCOUNT_MESSAGE);
     }
 
     @Test
-    void rejectDeleteWithInvalidUUIDFormat(
-            @Admin AuthContext admin
-    ) {
+    void rejectDeleteWithInvalidUUIDFormat(@Admin AuthContext admin) {
         Response response = api.users().deleteRaw(admin, INVALID_USER_ID);
 
         ApiErrorAssert.assertThat(response, ResponseSpec.badRequest400())
@@ -61,9 +58,7 @@ public class UserDeleteTest {
     }
 
     @Test
-    void shouldReturnNotFoundDeleteWhenUserNotExist(
-            @Admin AuthContext admin
-    ) {
+    void returnNotFoundDeleteWhenUserNotExist(@Admin AuthContext admin) {
         Response response = api.users().deleteRaw(admin, NON_EXISTENT_USER_ID);
 
         ApiErrorAssert.assertThat(response, ResponseSpec.notFound404())

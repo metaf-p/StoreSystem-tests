@@ -33,7 +33,7 @@ enum LocalConfig implements Config {
     @Override
     public ApiLogMode apiLogMode() {
         return ApiLogMode.valueOf(
-                System.getProperty("api.log", "ALL").toUpperCase()
+                System.getProperty("api.log", "TEST_ONLY").toUpperCase()
         );
     }
 }

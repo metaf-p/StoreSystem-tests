@@ -2,6 +2,7 @@ package data.auth;
 
 import api.client.AuthClient;
 import api.client.UserClient;
+import api.logging.ApiLogContext;
 import model.auth.common.AuthContext;
 import model.auth.common.UserRole;
 import model.auth.request.LoginRequest;
@@ -22,46 +23,53 @@ public final class AuthUserFixture {
     }
 
     public AuthContext createUser() {
-        RegisterUserRequest request = AuthTestData.uniqueUser();
-        registerUser(request);
+        return ApiLogContext.asSetup(() -> {
+            RegisterUserRequest request = AuthTestData.uniqueUser();
+            registerUser(request);
 
-        LoginRequest loginRequest = new LoginRequest(
-                request.email(),
-                request.password()
-        );
+            LoginRequest loginRequest = new LoginRequest(
+                    request.email(),
+                    request.password()
+            );
 
-        return authClient.authenticate(loginRequest);
+            return authClient.authenticate(loginRequest);
+        });
+
     }
 
     public RegisterUserResponse registerUser(RegisterUserRequest request) {
-        return authClient.register(request);
+        return ApiLogContext.asSetup(() -> authClient.register(request));
     }
 
     public List<RegisterUserResponse> registerUsers(int count) {
-        List<RegisterUserResponse> users = new ArrayList<>();
+        return ApiLogContext.asSetup(() -> {
+            List<RegisterUserResponse> users = new ArrayList<>();
 
-        for (int i = 0; i < count; i++) {
-            RegisterUserRequest request = AuthTestData.uniqueUser();
-            RegisterUserResponse response = registerUser(request);
-            users.add(response);
-        }
+            for (int i = 0; i < count; i++) {
+                RegisterUserRequest request = AuthTestData.uniqueUser();
+                RegisterUserResponse response = registerUser(request);
+                users.add(response);
+            }
 
-        return users;
+            return users;
+        });
     }
 
     public AuthContext createUserWithRole(
             UserRole role,
             AuthContext admin
     ) {
-        RegisterUserRequest registerUser = AuthTestData.uniqueUser();
-        RegisterUserResponse registerUserResponse = registerUser(registerUser);
+        return ApiLogContext.asSetup(() -> {
+            RegisterUserRequest registerUser = AuthTestData.uniqueUser();
+            RegisterUserResponse registerUserResponse = registerUser(registerUser);
 
-        if (role != UserRole.CUSTOMER) {
-            userClient.promote(admin, registerUserResponse.user().userId(), new PromoteRequest(role));
-        }
+            if (role != UserRole.CUSTOMER) {
+                userClient.promote(admin, registerUserResponse.user().userId(), new PromoteRequest(role));
+            }
 
-        return authClient.authenticate(
-                new LoginRequest(registerUser.email(), registerUser.password())
-        );
+            return authClient.authenticate(
+                    new LoginRequest(registerUser.email(), registerUser.password())
+            );
+        });
     }
 }

@@ -1,6 +1,7 @@
 package jupiter.extension;
 
 import api.client.ApiClients;
+import api.logging.ApiLogContext;
 import auth.AdminAuthBootstrap;
 import data.auth.AuthUserFixture;
 import model.auth.common.AuthContext;
@@ -26,7 +27,9 @@ final class ApiTestRuntime {
 
     AuthContext admin() {
         if(admin == null) {
-            admin = AdminAuthBootstrap.authenticate(api.auth());
+            admin = ApiLogContext.asSetup(
+                    () -> AdminAuthBootstrap.authenticate(api.auth())
+            );
         }
         return admin;
     }

@@ -20,7 +20,8 @@ Do not treat it as a roadmap replacement.
   - typed endpoint definitions through `Endpoint`, `AuthEndpoints`, and `ProductServiceEndpoints`.
   - technical transport through `ApiRequest` and `ApiRequester`.
   - query parameter support in `ApiRequest` and `ApiRequester`.
-  - config-driven API logging through `ApiLogMode` and `ApiLoggingFilter`, attached from `AuthServiceRequestSpecs`.
+  - config-driven API logging through `ApiLogMode` and `ApiLoggingFilter`, attached from request specs.
+  - API log scoping through `ApiCallScope` and `ApiLogContext`.
 - Auth and authenticated runtime:
   - `AuthClient` for login/register flows.
   - `AuthContext` for access token, refresh token, token type, and user id.
@@ -87,8 +88,11 @@ Do not treat it as a roadmap replacement.
   - environment-aware selection is deferred until a second real environment or CI/runtime divergence appears.
   - product service URL is configured directly in `LocalConfig`, not through environment-aware selection.
 - API logging is intentionally small:
-  - only `OFF` and `ALL` modes exist.
-  - mode selection currently comes from the `api.log` system property, with `ALL` as the local default.
+  - `OFF`, `ALL`, and `TEST_ONLY` modes exist.
+  - mode selection currently comes from the `api.log` system property, with `TEST_ONLY` as the local default.
+  - `TEST_ONLY` logs calls in the default test scope and suppresses calls wrapped as setup or cleanup.
+  - `AuthUserFixture` and admin bootstrap use `ApiLogContext.asSetup(...)` so user preparation noise can be hidden from default logs.
+  - `CLEANUP` scope exists in `ApiLogContext`, but there is no active framework-owned cleanup flow yet.
 - Query parameter support is intentionally minimal:
   - only the currently needed `ApiRequest.withQueryParams(...)` factory exists.
   - no generic pagination abstraction such as `PaginationQuery` exists yet.
@@ -149,6 +153,7 @@ Do not treat it as a roadmap replacement.
 - Per-test user deletion is intentionally excluded from the framework for now; periodic database cleanup belongs to the application side and is not modeled as a framework feature.
 - Current abstractions appear mostly extracted from proven flows rather than invented upfront.
 - `ApiRequester` remains technical and stateless, which keeps domain behavior inside clients.
+- `ApiLogContext` is a narrow runtime helper for API logging scope, not a domain fixture or auth state holder.
 - Query parameter support remains transport-level; pagination behavior is expressed in `UserClient`, not in the requester.
 - `ApiClients` keeps client construction explicit and small while more API areas are still being proven.
 - `AuthServiceRequestSpecs` still contains only request defaults and authentication header composition; auth state is not hidden in specs.
