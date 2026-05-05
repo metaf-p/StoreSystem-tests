@@ -5,10 +5,11 @@ import api.client.ApiClients;
 import api.spec.ResponseSpec;
 import io.restassured.response.Response;
 import jupiter.annotation.Admin;
-import jupiter.annotation.ApiTest;
+import jupiter.annotation.CurrentUser;
+import jupiter.annotation.TestUser;
+import jupiter.annotation.meta.ApiTest;
 import model.auth.common.AuthContext;
 import model.auth.common.UserRole;
-import model.auth.request.PromoteRequest;
 import model.auth.response.DeleteUserResponse;
 import org.junit.jupiter.api.Test;
 
@@ -25,10 +26,11 @@ public class UserDeleteTest {
     private static final String NON_EXISTENT_USER_ID = "00000000-0000-0000-0000-000000000000";
     private static final String INVALID_USER_ID = "invalid-id";
 
+    @TestUser
     @Test
     void shouldDeleteExistingUser(
             @Admin AuthContext admin,
-            AuthContext user
+            @CurrentUser AuthContext user
     ) {
         DeleteUserResponse deleteUserResponse = api.users().delete(admin, user.userId());
 
@@ -39,23 +41,17 @@ public class UserDeleteTest {
                 .hasDetail(USER_NOT_FOUND_MESSAGE);
     }
 
+    @TestUser(role = UserRole.ADMIN)
     @Test
-    void shouldNotAllowDeleteThemselvesForAdmin(
-            @Admin AuthContext admin,
-            AuthContext user
+    void rejectSelfDeleteForAdmin(
+            @CurrentUser AuthContext user
     ) {
-        PromoteRequest request = new PromoteRequest(UserRole.ADMIN);
-
-        api.users().promote(admin, user.userId(), request);
-
-        Response response = api.users().deleteRaw(user, user.userId());
-
-        ApiErrorAssert.assertThat(response, ResponseSpec.forbidden403())
+        ApiErrorAssert.assertThat(api.users().deleteRaw(user, user.userId()), ResponseSpec.forbidden403())
                 .hasDetail(SUPERADMIN_CANNOT_DELETE_OWN_ACCOUNT_MESSAGE);
     }
 
     @Test
-    void shouldRejectDeleteWithInvalidUUIDFormat(
+    void rejectDeleteWithInvalidUUIDFormat(
             @Admin AuthContext admin
     ) {
         Response response = api.users().deleteRaw(admin, INVALID_USER_ID);

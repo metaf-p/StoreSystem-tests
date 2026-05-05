@@ -5,6 +5,7 @@ import api.spec.ProductServiceRequestSpec;
 import api.spec.ResponseSpec;
 import api.transport.ApiRequest;
 import api.transport.ApiRequester;
+import io.restassured.response.Response;
 import model.auth.common.AuthContext;
 import model.product.request.SupplierCreateRequest;
 import model.product.response.SupplierResponse;
@@ -29,6 +30,13 @@ public class SupplierClient extends BaseApiClient {
                 ApiRequest.withBody(ProductServiceEndpoints.SUPPLIERS_CREATE, request),
                 ProductServiceRequestSpec.authenticatedRequest(actor),
                 ResponseSpec.created201()
+        );
+    }
+
+    public Response createRaw(AuthContext actor, SupplierCreateRequest request) {
+        return executeRaw(
+                ApiRequest.withBody(ProductServiceEndpoints.SUPPLIERS_CREATE, request),
+                ProductServiceRequestSpec.authenticatedRequest(actor)
         );
     }
 }

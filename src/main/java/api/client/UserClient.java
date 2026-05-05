@@ -46,14 +46,6 @@ public class UserClient extends BaseApiClient {
         );
     }
 
-    public UserResponse listUsers(AuthContext authContext) {
-        return execute(
-                ApiRequest.withoutBody(AuthEndpoints.USERS),
-                AuthServiceRequestSpecs.authenticatedRequest(authContext),
-                ResponseSpec.ok200()
-        );
-    }
-
     public Response listUsersRaw(AuthContext authContext) {
         return executeRaw(
                 ApiRequest.withoutBody(AuthEndpoints.USERS),

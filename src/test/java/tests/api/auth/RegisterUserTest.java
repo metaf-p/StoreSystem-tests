@@ -6,7 +6,7 @@ import api.spec.ResponseSpec;
 import data.auth.AuthTestData;
 import data.auth.AuthUserFixture;
 import io.restassured.response.Response;
-import jupiter.annotation.ApiTest;
+import jupiter.annotation.meta.ApiTest;
 import model.auth.common.UserRole;
 import model.auth.request.RegisterUserRequest;
 import model.auth.response.RegisterUserResponse;

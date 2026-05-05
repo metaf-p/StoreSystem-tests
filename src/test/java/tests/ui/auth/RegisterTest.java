@@ -1,6 +1,6 @@
 package tests.ui.auth;
 
-import jupiter.annotation.UiTest;
+import jupiter.annotation.meta.UiTest;
 import org.junit.jupiter.api.Test;
 import page.RegistrationPage;
 

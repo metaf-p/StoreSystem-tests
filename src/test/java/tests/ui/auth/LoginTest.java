@@ -2,7 +2,7 @@ package tests.ui.auth;
 
 import data.auth.AuthTestData;
 import data.auth.AuthUserFixture;
-import jupiter.annotation.UiTest;
+import jupiter.annotation.meta.UiTest;
 import model.auth.request.RegisterUserRequest;
 import org.junit.jupiter.api.Test;
 import page.LoginPage;

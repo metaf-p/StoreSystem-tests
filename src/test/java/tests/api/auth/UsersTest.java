@@ -4,10 +4,11 @@ import api.assertion.ApiErrorAssert;
 import api.client.ApiClients;
 import api.spec.ResponseSpec;
 import data.auth.AuthUserFixture;
-import data.auth.UserCleanup;
 import io.restassured.response.Response;
 import jupiter.annotation.Admin;
-import jupiter.annotation.ApiTest;
+import jupiter.annotation.CurrentUser;
+import jupiter.annotation.TestUser;
+import jupiter.annotation.meta.ApiTest;
 import model.auth.common.AuthContext;
 import model.auth.common.UserRole;
 import model.auth.request.PromoteRequest;
@@ -29,33 +30,28 @@ public class UsersTest {
     private static final String INSUFFICIENT_RIGHTS_MESSAGE = "Insufficient rights";
     private static final String USER_NOT_FOUND_MESSAGE = "User not found";
 
-
+    @TestUser
     @Test
-    void shouldReturnOwnProfileWithIdForAuthenticatedUser(
-            AuthContext authContext
-    ) {
-
+    void shouldReturnOwnProfileWithIdForAuthenticatedUser(@CurrentUser AuthContext authContext) {
         CurrentUserResponse profile = api.users().profile(authContext);
         assertThat(profile.id()).isEqualTo(authContext.userId());
     }
 
+    @TestUser
     @Test
     void shouldReturnNotFoundWhenRequestProfileOfDeletedUser(
-            AuthContext user,
+            @CurrentUser AuthContext user,
             @Admin AuthContext admin
     ) {
         api.users().delete(admin, user.userId());
 
-        Response response = api.users().profileRaw(user);
-
-        ApiErrorAssert.assertThat(response, ResponseSpec.notFound404())
+        ApiErrorAssert.assertThat(api.users().profileRaw(user), ResponseSpec.notFound404())
                 .hasDetail(USER_NOT_FOUND_MESSAGE);
     }
 
     @Test
     void shouldReturnUsersListWithPagination(
             AuthUserFixture authUserFixture,
-            UserCleanup userCleanup,
             @Admin AuthContext admin
     ) {
         int usersCount = 25;
@@ -76,8 +72,9 @@ public class UsersTest {
 
     @Test
     void shouldRejectUsersListRequestWithoutToken() {
-        Response response = api.users().listUsersWithoutAuthRaw();
-        ApiErrorAssert.assertThat(response, ResponseSpec.forbidden403())
+        ApiErrorAssert.assertThat(
+                        api.users().listUsersWithoutAuthRaw(),
+                        ResponseSpec.forbidden403())
                 .hasDetail(NOT_AUTH_MESSAGE);
     }
 
@@ -89,15 +86,17 @@ public class UsersTest {
                 null,
                 "bearer"
         );
-        Response response = api.users().listUsersRaw(authContext);
-        ApiErrorAssert.assertThat(response, ResponseSpec.unauthorized401())
+        ApiErrorAssert.assertThat(
+                        api.users().listUsersRaw(authContext),
+                        ResponseSpec.unauthorized401())
                 .hasDetail(TOKEN_INVALID_MESSAGE);
     }
 
+    @TestUser
     @Test
     void shouldPromoteRegularUserToAdmin(
             @Admin AuthContext admin,
-            AuthContext user
+            @CurrentUser AuthContext user
     ) {
         PromoteRequest promoteRequest = new PromoteRequest(UserRole.ADMIN);
 
@@ -110,11 +109,13 @@ public class UsersTest {
         assertThat(profile.role()).isEqualTo(UserRole.ADMIN);
     }
 
+    @TestUser
     @Test
     void shouldRejectPromotionWithInsufficientRights(
-            AuthContext promoter,
-            AuthContext user
+            @CurrentUser AuthContext promoter,
+            AuthUserFixture authUserFixture
     ) {
+        AuthContext user = authUserFixture.createUser();
         PromoteRequest request = new PromoteRequest(UserRole.ADMIN);
 
         Response response = api.users()
@@ -126,17 +127,15 @@ public class UsersTest {
         assertThat(profile.role()).isEqualTo(UserRole.CUSTOMER);
     }
 
+    @TestUser(role = UserRole.ADMIN)
     @Test
     void shouldDisplayAlreadyHasRoleMessageWhenPromoteToSameRole(
             @Admin AuthContext admin,
-            AuthContext user
+            @CurrentUser AuthContext user
     ) {
         PromoteRequest request = new PromoteRequest(UserRole.ADMIN);
 
-        api.users().promote(admin, user.userId(), request);
-
-        PromoteResponse promoteResponse = api.users()
-                .promote(admin, user.userId(), request);
+        PromoteResponse promoteResponse = api.users().promote(admin, user.userId(), request);
         assertThat(promoteResponse.detail())
                 .isEqualTo(USER_ALREADY_HAS_ROLE_MESSAGE);
 
