@@ -31,7 +31,7 @@ jobs:
       - name: Checkout app
         uses: actions/checkout@v4
         with:
-          repository: Metaf-x/StoreSystem-app
+          repository: Metaf-p/StoreSystem-app
           path: app
 
       - name: Validate docker compose
