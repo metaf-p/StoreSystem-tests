@@ -5,12 +5,16 @@ import api.spec.ProductServiceRequestSpec;
 import api.spec.ResponseSpec;
 import api.transport.ApiRequest;
 import api.transport.ApiRequester;
+import api.transport.MultipartPart;
+import model.product.request.SupplierDocumentType;
 import io.restassured.response.Response;
 import model.auth.common.AuthContext;
 import model.common.MessageResponse;
 import model.product.request.SupplierCreateRequest;
+import model.product.response.SupplierDocumentResponse;
 import model.product.response.SupplierResponse;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -100,5 +104,29 @@ public class SupplierClient extends BaseApiClient {
                 ),
                 ProductServiceRequestSpec.authenticatedRequest(actor)
         ).then().spec(ResponseSpec.deleteQuietly());
+    }
+
+    public SupplierDocumentResponse uploadDocument(
+            AuthContext actor,
+            UUID supplierId,
+            SupplierDocumentType documentType,
+            String description,
+            Path path
+    ) {
+        List<MultipartPart> multipartParts = List.of(
+                MultipartPart.field("document_type", documentType.value()),
+                MultipartPart.field("description", description),
+                MultipartPart.file("file", path.toFile(), "application/pdf")
+        );
+
+        return execute(
+                ApiRequest.withPathParamsAndMultipart(
+                        ProductServiceEndpoints.SUPPLIER_DOCUMENT_UPLOAD,
+                        Map.of("supplier_id", supplierId),
+                        multipartParts
+                ),
+                ProductServiceRequestSpec.authenticatedMultipartRequest(actor),
+                ResponseSpec.ok200()
+        );
     }
 }

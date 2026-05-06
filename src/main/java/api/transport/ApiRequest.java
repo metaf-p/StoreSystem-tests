@@ -2,12 +2,14 @@ package api.transport;
 
 import api.endpoint.Endpoint;
 
+import java.util.List;
 import java.util.Map;
 
 public record ApiRequest<RES>(
         Endpoint<RES> endpoint,
         Map<String, ?> pathParams,
         Map<String, ?> queryParams,
+        List<MultipartPart> multipartParts,
         Object body
 ) {
     public static <RES> ApiRequest<RES> withBody(
@@ -18,6 +20,7 @@ public record ApiRequest<RES>(
                 endpoint,
                 Map.of(),
                 Map.of(),
+                List.of(),
                 body
         );
     }
@@ -27,6 +30,7 @@ public record ApiRequest<RES>(
                 endpoint,
                 Map.of(),
                 Map.of(),
+                List.of(),
                 null
         );
     }
@@ -39,6 +43,7 @@ public record ApiRequest<RES>(
                 endpoint,
                 pathParams,
                 Map.of(),
+                List.of(),
                 null
         );
     }
@@ -52,6 +57,7 @@ public record ApiRequest<RES>(
                 endpoint,
                 pathParams,
                 Map.of(),
+                List.of(),
                 body
         );
     }
@@ -60,6 +66,20 @@ public record ApiRequest<RES>(
             Endpoint<RES> endpoint,
             Map<String, ?> queryParams
     ) {
-        return new ApiRequest<>(endpoint, Map.of(), queryParams, null);
+        return new ApiRequest<>(endpoint, Map.of(), queryParams, List.of(),null);
+    }
+
+    public static <RES> ApiRequest<RES> withPathParamsAndMultipart(
+            Endpoint<RES> endpoint,
+            Map<String, ?> pathParams,
+            List<MultipartPart> multipartParts
+    ) {
+        return new ApiRequest<>(
+                endpoint,
+                pathParams,
+                Map.of(),
+                multipartParts,
+                null
+        );
     }
 }

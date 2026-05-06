@@ -36,6 +36,14 @@ public class ApiRequester {
             request.queryParams(apiRequest.queryParams());
         }
 
+        for(MultipartPart part : apiRequest.multipartParts()) {
+            if(part.isFile()) {
+                request.multiPart(part.controlName(), part.file(), part.mimeType());
+            } else {
+                request.multiPart(part.controlName(), part.value());
+            }
+        }
+
         if (apiRequest.body() != null) {
             request.body(apiRequest.body());
         }

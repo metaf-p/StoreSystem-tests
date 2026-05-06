@@ -50,7 +50,8 @@ public class ApiFixtureExtension implements ParameterResolver, AfterEachCallback
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-        ApiTestRuntime.get(context).cleanupSuppliers();
+        //disabled for now - cannot delete supplier with file attached to it
+//        ApiTestRuntime.get(context).cleanupSuppliers();
         ApiTestRuntime.get(context).cleanupUsers();
     }
 }
