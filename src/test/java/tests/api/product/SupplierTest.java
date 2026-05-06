@@ -271,7 +271,7 @@ public class SupplierTest {
                 .doesNotContain(supplierId);
     }
 
-    @TestUser
+    @TestUser(role = UserRole.CUSTOMER)
     @Test
     void forbidDeleteSupplierForCustomer(
             SupplierFixture supplierFixture,

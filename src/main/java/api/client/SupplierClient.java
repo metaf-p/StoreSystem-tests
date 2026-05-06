@@ -6,11 +6,11 @@ import api.spec.ResponseSpec;
 import api.transport.ApiRequest;
 import api.transport.ApiRequester;
 import api.transport.MultipartPart;
-import model.product.request.SupplierDocumentType;
 import io.restassured.response.Response;
 import model.auth.common.AuthContext;
 import model.common.MessageResponse;
 import model.product.request.SupplierCreateRequest;
+import model.product.request.SupplierDocumentType;
 import model.product.response.SupplierDocumentResponse;
 import model.product.response.SupplierResponse;
 
@@ -111,17 +111,18 @@ public class SupplierClient extends BaseApiClient {
             UUID supplierId,
             SupplierDocumentType documentType,
             String description,
-            Path path
+            Path path,
+            String mimeType
     ) {
         List<MultipartPart> multipartParts = List.of(
                 MultipartPart.field("document_type", documentType.value()),
                 MultipartPart.field("description", description),
-                MultipartPart.file("file", path.toFile(), "application/pdf")
+                MultipartPart.file("file", path.toFile(), mimeType)
         );
 
         return execute(
                 ApiRequest.withPathParamsAndMultipart(
-                        ProductServiceEndpoints.SUPPLIER_DOCUMENT_UPLOAD,
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_UPLOAD,
                         Map.of("supplier_id", supplierId),
                         multipartParts
                 ),
@@ -129,4 +130,57 @@ public class SupplierClient extends BaseApiClient {
                 ResponseSpec.ok200()
         );
     }
+
+    public Response uploadDocumentRaw(
+            AuthContext actor,
+            UUID supplierId,
+            SupplierDocumentType documentType,
+            String description,
+            Path path,
+            String mimeType
+    ) {
+        List<MultipartPart> multipartParts = List.of(
+                MultipartPart.field("document_type", documentType.value()),
+                MultipartPart.field("description", description),
+                MultipartPart.file("file", path.toFile(), mimeType)
+        );
+
+        return executeRaw(
+                ApiRequest.withPathParamsAndMultipart(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_UPLOAD,
+                        Map.of("supplier_id", supplierId),
+                        multipartParts
+                ),
+                ProductServiceRequestSpec.authenticatedMultipartRequest(actor)
+        );
+    }
+
+    public List<SupplierDocumentResponse> getAllDocuments(
+            AuthContext actor,
+            UUID supplierId
+    ) {
+        return execute(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENTS_LIST,
+                        Map.of("supplier_id", supplierId)),
+                ProductServiceRequestSpec.authenticatedRequest(actor),
+                ResponseSpec.ok200()
+        );
+    }
+
+    public MessageResponse deleteDocument(
+            AuthContext actor,
+            UUID supplierId,
+            UUID documentId
+    ) {
+        return execute(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_DELETE,
+                        Map.of("supplier_id", supplierId, "document_id", documentId)
+                ),
+                ProductServiceRequestSpec.authenticatedRequest(actor),
+                ResponseSpec.ok200()
+        );
+    }
+
 }

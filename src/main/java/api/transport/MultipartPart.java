@@ -1,5 +1,7 @@
 package api.transport;
 
+import org.apache.http.entity.mime.MIME;
+
 import java.io.File;
 
 public record MultipartPart(
