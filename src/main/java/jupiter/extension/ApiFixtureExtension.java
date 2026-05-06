@@ -42,7 +42,7 @@ public class ApiFixtureExtension implements ParameterResolver, AfterEachCallback
         }
 
         throw new ExtensionConfigurationException(
-                "no client found for "
+                "no fixture found for "
                         + parameterContext.getParameter().getType()
                         + " method parameter"
         );
@@ -50,7 +50,7 @@ public class ApiFixtureExtension implements ParameterResolver, AfterEachCallback
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-        ApiTestRuntime.get(context).cleanupUsers();
         ApiTestRuntime.get(context).cleanupSuppliers();
+        ApiTestRuntime.get(context).cleanupUsers();
     }
 }
