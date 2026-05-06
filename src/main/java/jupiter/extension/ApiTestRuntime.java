@@ -88,9 +88,10 @@ final class ApiTestRuntime {
 
         ApiLogContext.asCleanup(() -> {
             try {
-                supplierCleanup.createdSuppliers().forEach(
-                        supplierId -> api.suppliers().deleteQuietly(admin(), supplierId)
-                );
+                supplierCleanup.createdSuppliers().forEach(supplierId -> {
+                    api.suppliers().deleteAllDocumentsQuietly(admin(), supplierId);
+                    api.suppliers().deleteQuietly(admin(), supplierId);
+                });
             } finally {
                 supplierCleanup.clear();
             }

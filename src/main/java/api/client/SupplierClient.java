@@ -5,12 +5,16 @@ import api.spec.ProductServiceRequestSpec;
 import api.spec.ResponseSpec;
 import api.transport.ApiRequest;
 import api.transport.ApiRequester;
+import api.transport.MultipartPart;
 import io.restassured.response.Response;
 import model.auth.common.AuthContext;
 import model.common.MessageResponse;
 import model.product.request.SupplierCreateRequest;
+import model.product.request.SupplierDocumentType;
+import model.product.response.SupplierDocumentResponse;
 import model.product.response.SupplierResponse;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -101,4 +105,130 @@ public class SupplierClient extends BaseApiClient {
                 ProductServiceRequestSpec.authenticatedRequest(actor)
         ).then().spec(ResponseSpec.deleteQuietly());
     }
+
+    public SupplierDocumentResponse uploadDocument(
+            AuthContext actor,
+            UUID supplierId,
+            SupplierDocumentType documentType,
+            String description,
+            Path path,
+            String mimeType
+    ) {
+        List<MultipartPart> multipartParts = List.of(
+                MultipartPart.field("document_type", documentType.value()),
+                MultipartPart.field("description", description),
+                MultipartPart.file("file", path.toFile(), mimeType)
+        );
+
+        return execute(
+                ApiRequest.withPathParamsAndMultipart(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_UPLOAD,
+                        Map.of("supplier_id", supplierId),
+                        multipartParts
+                ),
+                ProductServiceRequestSpec.authenticatedMultipartRequest(actor),
+                ResponseSpec.ok200()
+        );
+    }
+
+    public Response uploadDocumentRaw(
+            AuthContext actor,
+            UUID supplierId,
+            SupplierDocumentType documentType,
+            String description,
+            Path path,
+            String mimeType
+    ) {
+        List<MultipartPart> multipartParts = List.of(
+                MultipartPart.field("document_type", documentType.value()),
+                MultipartPart.field("description", description),
+                MultipartPart.file("file", path.toFile(), mimeType)
+        );
+
+        return executeRaw(
+                ApiRequest.withPathParamsAndMultipart(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_UPLOAD,
+                        Map.of("supplier_id", supplierId),
+                        multipartParts
+                ),
+                ProductServiceRequestSpec.authenticatedMultipartRequest(actor)
+        );
+    }
+
+    public List<SupplierDocumentResponse> getAllDocuments(
+            AuthContext actor,
+            UUID supplierId
+    ) {
+        return execute(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENTS_LIST,
+                        Map.of("supplier_id", supplierId)),
+                ProductServiceRequestSpec.authenticatedRequest(actor),
+                ResponseSpec.ok200()
+        );
+    }
+
+    public Response getAllDocumentsRaw(
+            AuthContext actor,
+            UUID supplierId
+    ) {
+        return executeRaw(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENTS_LIST,
+                        Map.of("supplier_id", supplierId)),
+                ProductServiceRequestSpec.authenticatedRequest(actor)
+        );
+    }
+
+    public MessageResponse deleteDocument(
+            AuthContext actor,
+            UUID supplierId,
+            UUID documentId
+    ) {
+        return execute(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_DELETE,
+                        Map.of("supplier_id", supplierId, "document_id", documentId)
+                ),
+                ProductServiceRequestSpec.authenticatedRequest(actor),
+                ResponseSpec.ok200()
+        );
+    }
+
+    public Response deleteDocumentRaw(
+            AuthContext actor,
+            UUID supplierId,
+            UUID documentId
+    ) {
+        return executeRaw(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_DELETE,
+                        Map.of("supplier_id", supplierId, "document_id", documentId)
+                ),
+                ProductServiceRequestSpec.authenticatedRequest(actor)
+        );
+    }
+
+    public void deleteDocumentQuietly(AuthContext actor, UUID supplierId, UUID documentId) {
+        deleteDocumentRaw(actor, supplierId, documentId)
+                .then()
+                .spec(ResponseSpec.deleteQuietly());
+    }
+
+    public void deleteAllDocumentsQuietly(AuthContext actor, UUID supplierId) {
+        Response response = getAllDocumentsRaw(actor, supplierId);
+        if (response.statusCode() == 404) {
+            return;
+        }
+
+        response.then().spec(ResponseSpec.ok200());
+
+        List<SupplierDocumentResponse> documents = response.as(
+                ProductServiceEndpoints.SUPPLIERS_DOCUMENTS_LIST.responseTypeRef()
+        );
+
+        documents.forEach(document ->
+                deleteDocumentQuietly(actor, supplierId, document.documentId()));
+    }
+
 }

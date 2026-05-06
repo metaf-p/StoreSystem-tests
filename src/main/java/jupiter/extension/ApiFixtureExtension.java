@@ -37,7 +37,7 @@ public class ApiFixtureExtension implements ParameterResolver, AfterEachCallback
             return ApiTestRuntime.get(extensionContext).authUserFixture();
         }
 
-        if(parameterType.equals(SupplierFixture.class)) {
+        if (parameterType.equals(SupplierFixture.class)) {
             return ApiTestRuntime.get(extensionContext).supplierFixture();
         }
 
