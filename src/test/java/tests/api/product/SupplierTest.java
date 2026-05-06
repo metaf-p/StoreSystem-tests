@@ -10,6 +10,7 @@ import jupiter.annotation.TestUser;
 import jupiter.annotation.meta.ApiTest;
 import model.auth.common.AuthContext;
 import model.auth.common.UserRole;
+import model.common.MessageResponse;
 import model.product.request.SupplierCreateRequest;
 import model.product.response.SupplierResponse;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +37,7 @@ public class SupplierTest {
     private static final String VALUE_ERROR_EMAIL = "value_error.email";
     private static final String REQUIRES_OPERATOR_ACCESS_ERROR_MESSAGE = "Requires operator access";
     private static final String NOT_AUTHENTICATED_ERROR_MESSAGE = "Not authenticated";
+    private static final String SUPPLIER_DELETED_SUCCESS_MESSAGE = "Supplier deleted";
 
     private final ApiClients api = ApiClients.create();
 
@@ -251,5 +254,37 @@ public class SupplierTest {
                 api.suppliers().getWithoutAuthRaw(createdSupplier.response().supplierId()),
                 ResponseSpec.forbidden403())
                 .hasDetail(NOT_AUTHENTICATED_ERROR_MESSAGE);
+    }
+
+    @TestUser(role = UserRole.OPERATOR)
+    @Test
+    void shouldDeleteSupplier(
+            SupplierFixture supplierFixture,
+            @CurrentUser AuthContext operator
+    ) {
+        UUID supplierId = supplierFixture.create().response().supplierId();
+        MessageResponse delete = api.suppliers().delete(operator, supplierId);
+        assertThat(delete.message()).isEqualTo(SUPPLIER_DELETED_SUCCESS_MESSAGE);
+
+        List<SupplierResponse> supplierResponseList = api.suppliers().getAll(operator);
+        assertThat(supplierResponseList).extracting(SupplierResponse::supplierId)
+                .doesNotContain(supplierId);
+    }
+
+    @TestUser
+    @Test
+    void forbidDeleteSupplierForCustomer(
+            SupplierFixture supplierFixture,
+            @CurrentUser AuthContext customer
+    ) {
+        UUID supplierId = supplierFixture.create().response().supplierId();
+        ApiErrorAssert.assertThat(
+                api.suppliers().deleteRaw(customer, supplierId),
+                ResponseSpec.forbidden403())
+                .hasDetail(REQUIRES_OPERATOR_ACCESS_ERROR_MESSAGE);
+
+        List<SupplierResponse> supplierResponseList = api.suppliers().getAll(customer);
+        assertThat(supplierResponseList).extracting(SupplierResponse::supplierId)
+                .contains(supplierId);
     }
 }

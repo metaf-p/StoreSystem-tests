@@ -6,7 +6,7 @@ import jupiter.annotation.Admin;
 import model.auth.common.AuthContext;
 import org.junit.jupiter.api.extension.*;
 
-public class ApiFixtureExtension implements ParameterResolver {
+public class ApiFixtureExtension implements ParameterResolver, AfterEachCallback {
     public static final ExtensionContext.Namespace NAMESPACE
             = ExtensionContext.Namespace.create(ApiFixtureExtension.class);
 
@@ -46,5 +46,11 @@ public class ApiFixtureExtension implements ParameterResolver {
                         + parameterContext.getParameter().getType()
                         + " method parameter"
         );
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        ApiTestRuntime.get(context).cleanupUsers();
+        ApiTestRuntime.get(context).cleanupSuppliers();
     }
 }

@@ -50,17 +50,17 @@ public class UsersTest {
     }
 
     @Test
-    void shouldReturnUsersListWithPagination(
+    void checkUsersPaginationOnNonEmptyList(
             AuthUserFixture authUserFixture,
             @Admin AuthContext admin
     ) {
-        int usersCount = 25;
+        int usersCount = 8;
         int page = 2;
-        int pageSize = 7;
+        int pageSize = 2;
 
         authUserFixture.registerUsers(usersCount);
 
-        UserResponse userResponse = api.users().listUsers(admin, page, pageSize);
+        UserResponse userResponse = api.users().getAll(admin, page, pageSize);
         assertThat(userResponse.page()).isEqualTo(page);
         assertThat(userResponse.pageSize()).isEqualTo(pageSize);
         assertThat(userResponse.users()).hasSizeLessThanOrEqualTo(pageSize);
@@ -71,15 +71,15 @@ public class UsersTest {
     }
 
     @Test
-    void shouldRejectUsersListRequestWithoutToken() {
+    void rejectUsersListRequestWithoutToken() {
         ApiErrorAssert.assertThat(
-                        api.users().listUsersWithoutAuthRaw(),
+                        api.users().getAllWithoutAuthRaw(),
                         ResponseSpec.forbidden403())
                 .hasDetail(NOT_AUTH_MESSAGE);
     }
 
     @Test
-    void shouldRejectUsersListRequestWithInvalidToken() {
+    void rejectUsersListRequestWithInvalidToken() {
         AuthContext authContext = new AuthContext(
                 null,
                 "invalid-token",
@@ -87,7 +87,7 @@ public class UsersTest {
                 "bearer"
         );
         ApiErrorAssert.assertThat(
-                        api.users().listUsersRaw(authContext),
+                        api.users().getAllRaw(authContext),
                         ResponseSpec.unauthorized401())
                 .hasDetail(TOKEN_INVALID_MESSAGE);
     }
@@ -111,7 +111,7 @@ public class UsersTest {
 
     @TestUser
     @Test
-    void shouldRejectPromotionWithInsufficientRights(
+    void rejectPromotionWithInsufficientRights(
             @CurrentUser AuthContext promoter,
             AuthUserFixture authUserFixture
     ) {

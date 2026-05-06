@@ -1,6 +1,7 @@
 package api.endpoint;
 
 import io.restassured.common.mapper.TypeRef;
+import model.common.MessageResponse;
 import model.product.response.SupplierResponse;
 
 import java.util.List;
@@ -28,6 +29,13 @@ public final class ProductServiceEndpoints {
                     "/suppliers/",
                     HttpMethods.POST,
                     new TypeRef<SupplierResponse>() {
+                    }
+            );
+    public static final Endpoint<MessageResponse> SUPPLIERS_DELETE =
+            new Endpoint<>(
+                    "/suppliers/{supplier_id}",
+                    HttpMethods.DELETE,
+                    new TypeRef<MessageResponse>() {
                     }
             );
 

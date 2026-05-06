@@ -39,13 +39,13 @@ When reviewing this backlog:
 - Reason: current page objects are still minimal, and the existing title checks are enough for the current UI baseline while other cleanup/refinement work is in progress.
 - Return when: adding or expanding UI flows, touching page objects again, or when page identity checks become flaky or ambiguous.
 
-### Revisit framework-owned user cleanup
+### Review fixture cleanup under parallel execution
 
 - Status: deferred
-- Area: Test foundation / user fixtures
-- Task: decide whether the test framework should own targeted cleanup for users created through `@TestUser` and `AuthUserFixture`.
-- Reason: current user cleanup is intentionally handled outside the test framework by a periodic application-level database cleanup script.
-- Return when: accumulated test users start making tests flaky, CI/runtime data volume becomes a problem, or parallel execution requires stricter per-test isolation.
+- Area: Test foundation / fixture cleanup
+- Task: review whether `UserCleanup` and `SupplierCleanup` remain isolated and reliable when tests run in parallel.
+- Reason: targeted framework cleanup now exists for fixture-created users and suppliers, but parallel execution is not enabled or validated yet.
+- Return when: enabling JUnit parallel execution, observing cleanup-related flakiness, or adding cleanup for more product-service entities.
 
 ### Refactor UI tests to declarative user fixtures
 
