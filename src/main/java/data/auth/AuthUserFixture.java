@@ -16,10 +16,12 @@ import java.util.List;
 public final class AuthUserFixture {
     private final AuthClient authClient;
     private final UserClient userClient;
+    private final UserCleanup cleanup;
 
-    public AuthUserFixture(AuthClient authClient, UserClient userClient) {
+    public AuthUserFixture(AuthClient authClient, UserClient userClient, UserCleanup cleanup) {
         this.authClient = authClient;
         this.userClient = userClient;
+        this.cleanup = cleanup;
     }
 
     public AuthContext createUser() {
@@ -38,7 +40,11 @@ public final class AuthUserFixture {
     }
 
     public RegisterUserResponse registerUser(RegisterUserRequest request) {
-        return ApiLogContext.asSetup(() -> authClient.register(request));
+        return ApiLogContext.asSetup(() -> {
+            RegisterUserResponse register = authClient.register(request);
+            cleanup.addUser(register.user().userId());
+            return register;
+        });
     }
 
     public List<RegisterUserResponse> registerUsers(int count) {
@@ -67,9 +73,9 @@ public final class AuthUserFixture {
                 userClient.promote(admin, registerUserResponse.user().userId(), new PromoteRequest(role));
             }
 
-            return authClient.authenticate(
-                    new LoginRequest(registerUser.email(), registerUser.password())
-            );
+            LoginRequest request = new LoginRequest(registerUser.email(), registerUser.password());
+
+            return authClient.authenticate(request);
         });
     }
 }

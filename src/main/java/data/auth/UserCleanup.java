@@ -13,4 +13,16 @@ public final class UserCleanup {
     public void addUser(UUID userId) {
         users.add(userId);
     }
+
+    public Set<UUID> createdUsers() {
+        return users;
+    }
+
+    public boolean isEmpty() {
+        return users.isEmpty();
+    }
+
+    public void clear() {
+        users.clear();
+    }
 }

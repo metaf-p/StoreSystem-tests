@@ -35,7 +35,7 @@ public class UserClient extends BaseApiClient {
         );
     }
 
-    public UserResponse listUsers(AuthContext authContext, int page, int size) {
+    public UserResponse getAll(AuthContext authContext, int page, int size) {
         return execute(
                 ApiRequest.withQueryParams(
                         AuthEndpoints.USERS,
@@ -46,14 +46,14 @@ public class UserClient extends BaseApiClient {
         );
     }
 
-    public Response listUsersRaw(AuthContext authContext) {
+    public Response getAllRaw(AuthContext authContext) {
         return executeRaw(
                 ApiRequest.withoutBody(AuthEndpoints.USERS),
                 AuthServiceRequestSpecs.authenticatedRequest(authContext)
         );
     }
 
-    public Response listUsersWithoutAuthRaw() {
+    public Response getAllWithoutAuthRaw() {
         return executeRaw(
                 ApiRequest.withoutBody(AuthEndpoints.USERS),
                 AuthServiceRequestSpecs.baseRequest()

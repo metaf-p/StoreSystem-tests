@@ -4,12 +4,13 @@ import api.assertion.ApiErrorAssert;
 import api.client.ApiClients;
 import api.spec.ResponseSpec;
 import data.product.ProductTestData;
-import jupiter.annotation.Admin;
+import data.product.SupplierFixture;
 import jupiter.annotation.CurrentUser;
 import jupiter.annotation.TestUser;
 import jupiter.annotation.meta.ApiTest;
 import model.auth.common.AuthContext;
 import model.auth.common.UserRole;
+import model.common.MessageResponse;
 import model.product.request.SupplierCreateRequest;
 import model.product.response.SupplierResponse;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +36,8 @@ public class SupplierTest {
     private static final String INVALID_EMAIL_MESSAGE = "value is not a valid email address";
     private static final String VALUE_ERROR_EMAIL = "value_error.email";
     private static final String REQUIRES_OPERATOR_ACCESS_ERROR_MESSAGE = "Requires operator access";
+    private static final String NOT_AUTHENTICATED_ERROR_MESSAGE = "Not authenticated";
+    private static final String SUPPLIER_DELETED_SUCCESS_MESSAGE = "Supplier deleted";
 
     private final ApiClients api = ApiClients.create();
 
@@ -152,8 +156,8 @@ public class SupplierTest {
         SupplierCreateRequest request = ProductTestData.supplierWithContactEmail("");
 
         ApiErrorAssert.assertThat(
-                api.suppliers().createRaw(operator, request),
-                ResponseSpec.unprocessableEntity422())
+                        api.suppliers().createRaw(operator, request),
+                        ResponseSpec.unprocessableEntity422())
                 .hasFirstValidationType(VALUE_ERROR_EMAIL)
                 .hasFirstValidationMessage(INVALID_EMAIL_MESSAGE);
     }
@@ -173,37 +177,114 @@ public class SupplierTest {
                 .hasFirstValidationMessage(MISSING_REQUIRED_FIELD_ERROR_MESSAGE);
     }
 
+    @Test
+    void forbidCreateSupplierWithoutAuth() {
+        SupplierCreateRequest request = ProductTestData.uniqueSupplier();
+
+        ApiErrorAssert.assertThat(
+                        api.suppliers().createWithoutAuthRaw(request),
+                        ResponseSpec.forbidden403())
+                .hasDetail(NOT_AUTHENTICATED_ERROR_MESSAGE);
+    }
+
     @TestUser
     @Test
-    void shouldReturnAllSuppliersForCustomer(
+    void returnSuppliersList(
             @CurrentUser AuthContext customer,
-            @Admin AuthContext admin
+            SupplierFixture supplierFixture
     ) {
-        SupplierCreateRequest request = ProductTestData.uniqueSupplier();
-        api.suppliers().create(admin, request);
+        var createdSupplier = supplierFixture.create();
         List<SupplierResponse> allSuppliers = api.suppliers().getAll(customer);
-        assertThat(allSuppliers).hasSizeGreaterThan(0);
+        assertThat(allSuppliers)
+                .filteredOn(supplier -> supplier.supplierId().equals(createdSupplier.response().supplierId()))
+                .singleElement()
+                .extracting(
+                        SupplierResponse::name,
+                        SupplierResponse::contactName,
+                        SupplierResponse::contactEmail
+                )
+                .containsExactly(
+                        createdSupplier.request().name(),
+                        createdSupplier.request().contactName(),
+                        createdSupplier.request().contactEmail()
+                );
+    }
+
+    @TestUser
+    @Test
+    void returnSupplierByIdWithAllFields(
+            @CurrentUser AuthContext customer,
+            SupplierFixture supplierFixture
+    ) {
+        var createdSupplier = supplierFixture.createWithAllFields();
+        SupplierResponse getSupplierResponse = api.suppliers().get(customer, createdSupplier.response().supplierId());
+
+        assertThat(getSupplierResponse.supplierId()).isNotNull();
+        assertThat(getSupplierResponse)
+                .extracting(
+                        SupplierResponse::supplierId,
+                        SupplierResponse::name,
+                        SupplierResponse::contactName,
+                        SupplierResponse::contactEmail,
+                        SupplierResponse::phoneNumber,
+                        SupplierResponse::address,
+                        SupplierResponse::country,
+                        SupplierResponse::city,
+                        SupplierResponse::website
+                )
+                .containsExactly(
+                        createdSupplier.response().supplierId(),
+                        createdSupplier.request().name(),
+                        createdSupplier.request().contactName(),
+                        createdSupplier.request().contactEmail(),
+                        createdSupplier.request().phoneNumber(),
+                        createdSupplier.request().address(),
+                        createdSupplier.request().country(),
+                        createdSupplier.request().city(),
+                        createdSupplier.request().website()
+                );
+    }
+
+    @Test
+    void forbidGetSupplierByIdWithoutAuth(
+            SupplierFixture supplierFixture
+    ) {
+        var createdSupplier = supplierFixture.create();
+        ApiErrorAssert.assertThat(
+                api.suppliers().getWithoutAuthRaw(createdSupplier.response().supplierId()),
+                ResponseSpec.forbidden403())
+                .hasDetail(NOT_AUTHENTICATED_ERROR_MESSAGE);
     }
 
     @TestUser(role = UserRole.OPERATOR)
     @Test
-    void shouldReturnAllSuppliersForOperator(
+    void shouldDeleteSupplier(
+            SupplierFixture supplierFixture,
             @CurrentUser AuthContext operator
     ) {
-        SupplierCreateRequest request = ProductTestData.uniqueSupplier();
-        api.suppliers().create(operator, request);
-        List<SupplierResponse> allSuppliers = api.suppliers().getAll(operator);
-        assertThat(allSuppliers).hasSizeGreaterThan(0);
+        UUID supplierId = supplierFixture.create().response().supplierId();
+        MessageResponse delete = api.suppliers().delete(operator, supplierId);
+        assertThat(delete.message()).isEqualTo(SUPPLIER_DELETED_SUCCESS_MESSAGE);
+
+        List<SupplierResponse> supplierResponseList = api.suppliers().getAll(operator);
+        assertThat(supplierResponseList).extracting(SupplierResponse::supplierId)
+                .doesNotContain(supplierId);
     }
 
-    @TestUser(role = UserRole.ADMIN)
+    @TestUser
     @Test
-    void shouldReturnAllSuppliersForAdmin(
-            @CurrentUser AuthContext admin
+    void forbidDeleteSupplierForCustomer(
+            SupplierFixture supplierFixture,
+            @CurrentUser AuthContext customer
     ) {
-        SupplierCreateRequest request = ProductTestData.uniqueSupplier();
-        api.suppliers().create(admin, request);
-        List<SupplierResponse> allSuppliers = api.suppliers().getAll(admin);
-        assertThat(allSuppliers).hasSizeGreaterThan(0);
+        UUID supplierId = supplierFixture.create().response().supplierId();
+        ApiErrorAssert.assertThat(
+                api.suppliers().deleteRaw(customer, supplierId),
+                ResponseSpec.forbidden403())
+                .hasDetail(REQUIRES_OPERATOR_ACCESS_ERROR_MESSAGE);
+
+        List<SupplierResponse> supplierResponseList = api.suppliers().getAll(customer);
+        assertThat(supplierResponseList).extracting(SupplierResponse::supplierId)
+                .contains(supplierId);
     }
 }
