@@ -168,6 +168,18 @@ public class SupplierClient extends BaseApiClient {
         );
     }
 
+    public Response getAllDocumentsRaw(
+            AuthContext actor,
+            UUID supplierId
+    ) {
+        return executeRaw(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENTS_LIST,
+                        Map.of("supplier_id", supplierId)),
+                ProductServiceRequestSpec.authenticatedRequest(actor)
+        );
+    }
+
     public MessageResponse deleteDocument(
             AuthContext actor,
             UUID supplierId,
@@ -181,6 +193,42 @@ public class SupplierClient extends BaseApiClient {
                 ProductServiceRequestSpec.authenticatedRequest(actor),
                 ResponseSpec.ok200()
         );
+    }
+
+    public Response deleteDocumentRaw(
+            AuthContext actor,
+            UUID supplierId,
+            UUID documentId
+    ) {
+        return executeRaw(
+                ApiRequest.withPathParams(
+                        ProductServiceEndpoints.SUPPLIERS_DOCUMENT_DELETE,
+                        Map.of("supplier_id", supplierId, "document_id", documentId)
+                ),
+                ProductServiceRequestSpec.authenticatedRequest(actor)
+        );
+    }
+
+    public void deleteDocumentQuietly(AuthContext actor, UUID supplierId, UUID documentId) {
+        deleteDocumentRaw(actor, supplierId, documentId)
+                .then()
+                .spec(ResponseSpec.deleteQuietly());
+    }
+
+    public void deleteAllDocumentsQuietly(AuthContext actor, UUID supplierId) {
+        Response response = getAllDocumentsRaw(actor, supplierId);
+        if (response.statusCode() == 404) {
+            return;
+        }
+
+        response.then().spec(ResponseSpec.ok200());
+
+        List<SupplierDocumentResponse> documents = response.as(
+                ProductServiceEndpoints.SUPPLIERS_DOCUMENTS_LIST.responseTypeRef()
+        );
+
+        documents.forEach(document ->
+                deleteDocumentQuietly(actor, supplierId, document.documentId()));
     }
 
 }

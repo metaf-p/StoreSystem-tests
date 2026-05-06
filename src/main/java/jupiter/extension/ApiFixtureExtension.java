@@ -37,7 +37,7 @@ public class ApiFixtureExtension implements ParameterResolver, AfterEachCallback
             return ApiTestRuntime.get(extensionContext).authUserFixture();
         }
 
-        if(parameterType.equals(SupplierFixture.class)) {
+        if (parameterType.equals(SupplierFixture.class)) {
             return ApiTestRuntime.get(extensionContext).supplierFixture();
         }
 
@@ -50,8 +50,7 @@ public class ApiFixtureExtension implements ParameterResolver, AfterEachCallback
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-        //disabled for now - cannot delete supplier with file attached to it
-//        ApiTestRuntime.get(context).cleanupSuppliers();
+        ApiTestRuntime.get(context).cleanupSuppliers();
         ApiTestRuntime.get(context).cleanupUsers();
     }
 }
