@@ -32,7 +32,7 @@ public class UsersTest {
 
     @TestUser
     @Test
-    void shouldReturnOwnProfileWithIdForAuthenticatedUser(@CurrentUser AuthContext authContext) {
+    void viewOwnProfileForAuthenticatedUser(@CurrentUser AuthContext authContext) {
         CurrentUserResponse profile = api.users().profile(authContext);
         assertThat(profile.id()).isEqualTo(authContext.userId());
     }
@@ -92,12 +92,13 @@ public class UsersTest {
                 .hasDetail(TOKEN_INVALID_MESSAGE);
     }
 
-    @TestUser
+    @TestUser(role = UserRole.ADMIN)
     @Test
     void shouldPromoteRegularUserToAdmin(
-            @Admin AuthContext admin,
-            @CurrentUser AuthContext user
+            @CurrentUser AuthContext admin,
+            AuthUserFixture authUserFixture
     ) {
+        AuthContext user = authUserFixture.createUser();
         PromoteRequest promoteRequest = new PromoteRequest(UserRole.ADMIN);
 
         PromoteResponse promoteResponse = api.users()
@@ -109,7 +110,7 @@ public class UsersTest {
         assertThat(profile.role()).isEqualTo(UserRole.ADMIN);
     }
 
-    @TestUser
+    @TestUser(role = UserRole.OPERATOR)
     @Test
     void rejectPromotionWithInsufficientRights(
             @CurrentUser AuthContext promoter,
@@ -130,12 +131,11 @@ public class UsersTest {
     @TestUser(role = UserRole.ADMIN)
     @Test
     void shouldDisplayAlreadyHasRoleMessageWhenPromoteToSameRole(
-            @Admin AuthContext admin,
             @CurrentUser AuthContext user
     ) {
         PromoteRequest request = new PromoteRequest(UserRole.ADMIN);
 
-        PromoteResponse promoteResponse = api.users().promote(admin, user.userId(), request);
+        PromoteResponse promoteResponse = api.users().promote(user, user.userId(), request);
         assertThat(promoteResponse.detail())
                 .isEqualTo(USER_ALREADY_HAS_ROLE_MESSAGE);
 

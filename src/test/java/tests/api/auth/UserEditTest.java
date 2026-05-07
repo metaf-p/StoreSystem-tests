@@ -11,6 +11,7 @@ import jupiter.annotation.CurrentUser;
 import jupiter.annotation.TestUser;
 import jupiter.annotation.meta.ApiTest;
 import model.auth.common.AuthContext;
+import model.auth.common.UserRole;
 import model.auth.request.EditUserRequest;
 import model.auth.response.CurrentUserResponse;
 import model.auth.response.EditUserResponse;
@@ -89,9 +90,9 @@ public class UserEditTest {
         assertThat(profileAfterEdit.email()).isEqualTo(emailBeforeEdit);
     }
 
-    @TestUser
+    @TestUser(role = UserRole.OPERATOR)
     @Test
-    void shouldRejectEditProfileWithInsufficientRights(
+    void forbidEditProfileForOperator(
             @CurrentUser AuthContext user,
             AuthUserFixture authUserFixture
     ) {
@@ -106,7 +107,7 @@ public class UserEditTest {
 
     @TestUser
     @Test
-    void shouldRejectEditProfileWithInvalidEmail(
+    void rejectEditProfileWithInvalidEmail(
             @Admin AuthContext admin,
             @CurrentUser AuthContext user
     ) {

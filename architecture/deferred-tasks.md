@@ -44,13 +44,13 @@ When reviewing this backlog:
 - Status: deferred
 - Area: Test foundation / fixture cleanup
 - Task: review whether `UserCleanup` and `SupplierCleanup` remain isolated and reliable when tests run in parallel.
-- Reason: targeted framework cleanup now exists for fixture-created users and suppliers, but parallel execution is not enabled or validated yet.
-- Return when: enabling JUnit parallel execution, observing cleanup-related flakiness, or adding cleanup for more product-service entities.
+- Reason: targeted framework cleanup now exists for fixture-created users and suppliers, and JUnit parallel execution is configured, but cleanup isolation has not been validated yet.
+- Return when: validating the current JUnit parallel settings, observing cleanup-related flakiness, or adding cleanup for more product-service entities.
 
 ### Refactor UI tests to declarative user fixtures
 
 - Status: deferred
 - Area: UI tests / test foundation
-- Task: align UI tests with the current `@TestUser` / `@CurrentUser` model, including API-authenticated UI entry through `UiAuthBridge`.
-- Reason: API user tests were refactored first, while UI tests are intentionally left on the old setup shape during the current supplier-flow work.
+- Task: align remaining UI auth tests with the current `@TestUser` / `@CurrentUser` model.
+- Reason: API-authenticated UI entry through `UiAuthBridge` already uses declarative user fixtures, while login UI tests still use direct `AuthUserFixture` setup during the current product-service work.
 - Return when: touching UI auth tests, expanding UI coverage, or preparing UI tests for CI execution.
